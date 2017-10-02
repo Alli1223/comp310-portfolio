@@ -107,77 +107,61 @@ ReadA:
   AND #%00000001  ; only look at bit 0
   BEQ ReadADone   ; branch to ReadADone if button is NOT pressed (0)
                   ; add instructions here to do something when button IS pressed (1)
-  LDA $0203       ; load sprite X position
+	
+  LDX #$00
+LoopA:
+  LDA $0203, x       ; load sprite X position
   CLC             ; make sure the carry flag is clear
   ADC #$01        ; A = A + 1
-  STA $0203       ; save sprite X position
+  STA $0203, x       ; save sprite X position
   
-  LDA $0207       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  ADC #$01        ; A = A + 1
-  STA $0207       ; save sprite X position
-  
-  LDA $020B       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  ADC #$01        ; A = A + 1
-  STA $020B       ; save sprite X position
-  
-  LDA $020F       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  ADC #$01        ; A = A + 1
-  STA $020F       ; save sprite X position
-
+  INX
+  INX
+  INX
+  INX
+  CPX #$10
+  BNE LoopA
 ReadADone:        ; handling this button is done
+  
+
   
 
 ReadB: 
   LDA $4016       ; player 1 - B
   AND #%00000001  ; only look at bit 0
   BEQ ReadBDone   ; branch to ReadBDone if button is NOT pressed (0)
-                  ; add instructions here to do something when button IS pressed (1)
-  LDA $0203       ; load sprite X position
+  
+  ; add instructions here to do something when button IS pressed (1)
+  LDX #$00
+LoopB:
+  LDA $0203, x       ; load sprite X position
   SEC             ; make sure carry flag is set
   SBC #$01        ; A = A - 1
-  STA $0203       ; save sprite X position
+  STA $0203, x       ; save sprite X position
   
-  LDA $0207       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  SBC #$01        ; A = A + 1
-  STA $0207       ; save sprite X position
-  
-  LDA $020B       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  SBC #$01        ; A = A + 1
-  STA $020B       ; save sprite X position
-  
-  LDA $020F       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  SBC #$01        ; A = A + 1
-  STA $020F       ; save sprite X position
+  INX
+  INX
+  INX
+  INX
+  CPX #$10
+  BNE LoopB
 
 ReadBDone:        ; handling this button is done
 
 
 
 ;Code to move up and down
-ReadUp: 
-  LDA $4016     
-  AND #%00000001 
-  BEQ ReadUpDone
-  LDA $0200       
-  CLC             
-  ADC #$01   
-  STA $0200  
-ReadUpDone: 
-
 ReadDown: 
   LDA $4016       
   AND #%00000001  
-  BEQ ReadDownDone  
-  LDA $0200 
+  BEQ ReadDownDone ; Branch if button is not pressed
+  
+  LDA $0203 ; Load sprite X position
   SEC             
-  SBC #$01     
-  STA $0200    
+  SBC #$01         ; Subtract 1
+  STA $0203        ; Save
+  
+
 ReadDownDone: 
   
   RTI             ; return from interrupt
