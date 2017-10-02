@@ -111,6 +111,22 @@ ReadA:
   CLC             ; make sure the carry flag is clear
   ADC #$01        ; A = A + 1
   STA $0203       ; save sprite X position
+  
+  LDA $0207       ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  ADC #$01        ; A = A + 1
+  STA $0207       ; save sprite X position
+  
+  LDA $020B       ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  ADC #$01        ; A = A + 1
+  STA $020B       ; save sprite X position
+  
+  LDA $020F       ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  ADC #$01        ; A = A + 1
+  STA $020F       ; save sprite X position
+
 ReadADone:        ; handling this button is done
   
 
@@ -123,9 +139,46 @@ ReadB:
   SEC             ; make sure carry flag is set
   SBC #$01        ; A = A - 1
   STA $0203       ; save sprite X position
+  
+  LDA $0207       ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  SBC #$01        ; A = A + 1
+  STA $0207       ; save sprite X position
+  
+  LDA $020B       ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  SBC #$01        ; A = A + 1
+  STA $020B       ; save sprite X position
+  
+  LDA $020F       ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  SBC #$01        ; A = A + 1
+  STA $020F       ; save sprite X position
+
 ReadBDone:        ; handling this button is done
 
 
+
+;Code to move up and down
+ReadUp: 
+  LDA $4016     
+  AND #%00000001 
+  BEQ ReadUpDone
+  LDA $0200       
+  CLC             
+  ADC #$01   
+  STA $0200  
+ReadUpDone: 
+
+ReadDown: 
+  LDA $4016       
+  AND #%00000001  
+  BEQ ReadDownDone  
+  LDA $0200 
+  SEC             
+  SBC #$01     
+  STA $0200    
+ReadDownDone: 
   
   RTI             ; return from interrupt
  
