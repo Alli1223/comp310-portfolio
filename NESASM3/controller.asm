@@ -102,6 +102,62 @@ LatchController:
   STA $4016       ; tell both the controllers to latch buttons
 
 
+  
+  ;;;;;;;;;;;;;
+  ;Movement
+  ;;;;;;;;;;;;;
+  
+  LDA $4016  
+  LDA $4016
+  LDA $4016
+  LDA $4016  
+
+  
+  ;Move Up
+ReadUp: 
+  LDA $4016       
+  AND #%00000001  
+  BEQ ReadUpDone ; Branch if button is not pressed
+  
+  LDY #$00
+LoopUp:
+  LDA $0200, y ; Load sprite Y position
+  SEC             
+  SBC #$01         ; Subtract 1
+  STA $0200, y        ; Save
+  
+  INY
+  INY
+  INY
+  INY
+  CPY #$10
+  BNE LoopUp
+
+ReadUpDone: 
+
+;Move Down
+ReadDown: 
+  LDA $4016       
+  AND #%00000001  
+  BEQ ReadDownDone ; Branch if button is not pressed
+  
+  LDY #$00
+LoopDown:
+  LDA $0200, y ; Load sprite Y position
+  CLC             
+  ADC #$01         ; Subtract 1
+  STA $0200, y        ; Save
+  
+  INY
+  INY
+  INY
+  INY
+  CPY #$10
+  BNE LoopDown
+ReadDownDone: 
+
+
+  ; Move Left
 ReadA: 
   LDA $4016       ; player 1 - A
   AND #%00000001  ; only look at bit 0
@@ -125,13 +181,12 @@ ReadADone:        ; handling this button is done
   
 
   
-
+  ; Move Right
 ReadB: 
   LDA $4016       ; player 1 - B
   AND #%00000001  ; only look at bit 0
   BEQ ReadBDone   ; branch to ReadBDone if button is NOT pressed (0)
   
-  ; add instructions here to do something when button IS pressed (1)
   LDX #$00
 LoopB:
   LDA $0203, x       ; load sprite X position
@@ -145,24 +200,14 @@ LoopB:
   INX
   CPX #$10
   BNE LoopB
-
 ReadBDone:        ; handling this button is done
 
 
 
-;Code to move up and down
-ReadDown: 
-  LDA $4016       
-  AND #%00000001  
-  BEQ ReadDownDone ; Branch if button is not pressed
-  
-  LDA $0203 ; Load sprite X position
-  SEC             
-  SBC #$01         ; Subtract 1
-  STA $0203        ; Save
-  
 
-ReadDownDone: 
+
+
+
   
   RTI             ; return from interrupt
  
