@@ -7,3 +7,7 @@ http://www.obelisk.me.uk/6502/reference.html
 
 ## Memory map:
 https://wiki.nesdev.com/w/index.php/CPU_memory_map
+
+
+
+## Link to Trello Board: https://trello.com/b/oxBGuh5x
