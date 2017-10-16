@@ -1,8 +1,8 @@
   .inesprg 1   ; 1x 16KB PRG code
-  .ineschr 1   ; 1x  8KB CHR data
+  .ineschr 2   ; 1x  8KB CHR data
   .inesmap 0   ; mapper 0 = NROM, no bank swapping
   .inesmir 1   ; background mirroring
-  
+  ;.include "Level.asm"
 
 ;;;;;;;;;;;;;;;
 
@@ -65,17 +65,26 @@ LoadPalettesLoop:
 
 
 
-LoadSprites:
+LoadPlayerSprite:
   LDX #$00              ; start at 0
-LoadSpritesLoop:
-  LDA sprites, x        ; load data from address (sprites +  x)
+LoadPlayerSpriteLoop:
+  LDA playerSprite, x        ; load data from address (sprites +  x)
   STA $0200, x          ; store into RAM address ($0200 + x)
   INX                   ; X = X + 1
   CPX #$20              ; Compare X to hex $20, decimal 32
-  BNE LoadSpritesLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
+  BNE LoadPlayerSpriteLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
                         ; if compare was equal to 32, keep going down
-              
-              
+
+LoadLevelSprites:
+  LDX #$00              ; start at 0
+LoadLevelSpritesLoop:
+  LDA levelSprites, x        ; load data from address (sprites +  x)
+  STA $0232, x          ; store into RAM address ($0232 + x)
+  INX                   ; X = X + 1
+  CPX #$20              ; Compare X to hex $20, decimal 32
+  BNE LoadLevelSpritesLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
+                        ; if compare was equal to 32, keep going down						
+
 
   LDA #%10000000   ; enable NMI, sprites from Pattern Table 1
   STA $2000
@@ -100,13 +109,25 @@ LatchController:
   STA $4016
   LDA #$00
   STA $4016       ; tell both the controllers to latch buttons
+  
+; Load level
+LoadLevel:
+  ;LDA $0232, x
+  ;CLC 
+  ;ADC #$01
+  ;STA $0232, x
+  ;INX
+  ;CPX #$10
+  ;BNE LoadLevel
 
+  
 
   
   ;;;;;;;;;;;;;
   ;Movement
   ;;;;;;;;;;;;;
   
+  ;Load four first key presses to get to arrow keys
   LDA $4016  
   LDA $4016
   LDA $4016
@@ -157,29 +178,6 @@ LoopDown:
 ReadDownDone: 
 
 
-  ; Move Left
-ReadA: 
-  LDA $4016       ; player 1 - A
-  AND #%00000001  ; only look at bit 0
-  BEQ ReadADone   ; branch to ReadADone if button is NOT pressed (0)
-                  ; add instructions here to do something when button IS pressed (1)
-	
-  LDX #$00
-LoopA:
-  LDA $0203, x       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  ADC #$01        ; A = A + 1
-  STA $0203, x       ; save sprite X position
-  
-  INX
-  INX
-  INX
-  INX
-  CPX #$10
-  BNE LoopA
-ReadADone:        ; handling this button is done
-  
-
   
   ; Move Right
 ReadB: 
@@ -203,6 +201,28 @@ LoopB:
 ReadBDone:        ; handling this button is done
 
 
+  ; Move Left
+ReadA: 
+  LDA $4016       ; player 1 - A
+  AND #%00000001  ; only look at bit 0
+  BEQ ReadADone   ; branch to ReadADone if button is NOT pressed (0)
+                  ; add instructions here to do something when button IS pressed (1)
+	
+  LDX #$00
+LoopA:
+  LDA $0203, x       ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  ADC #$01        ; A = A + 1
+  STA $0203, x       ; save sprite X position
+  
+  INX
+  INX
+  INX
+  INX
+  CPX #$10
+  BNE LoopA
+ReadADone:        ; handling this button is done
+; Movement Code End
 
 
 
@@ -218,10 +238,17 @@ ReadBDone:        ; handling this button is done
   .bank 1
   .org $E000
 palette:
-  .db $0F,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$0F
+  .db $0F,$22,$16,$27,$18,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$0F
   .db $0F,$1C,$15,$14,$31,$02,$38,$3C,$0F,$1C,$15,$14,$31,$02,$38,$3C
 
-sprites:
+playerSprite:
+     ;vert tile attr horiz
+  .db $80, $32, $00, $80   ;sprite 0
+  .db $80, $33, $00, $88   ;sprite 1
+  .db $88, $34, $00, $80   ;sprite 2
+  .db $88, $35, $00, $88   ;sprite 3
+  
+levelSprites:
      ;vert tile attr horiz
   .db $80, $32, $00, $80   ;sprite 0
   .db $80, $33, $00, $88   ;sprite 1
@@ -235,10 +262,10 @@ sprites:
                    ;to the label RESET:
   .dw 0          ;external interrupt IRQ is not used in this tutorial
   
-  
 ;;;;;;;;;;;;;;  
   
   
   .bank 2
   .org $0000
   .incbin "mario.chr"   ;includes 8KB graphics file from SMB1
+  .incbin "NewFile.chr"   ;includes 8KB graphics file from SMB1
