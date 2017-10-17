@@ -1,5 +1,5 @@
   .inesprg 1   ; 1x 16KB PRG code
-  .ineschr 2   ; 1x  8KB CHR data
+  .ineschr 1   ; 1x  8KB CHR data
   .inesmap 0   ; mapper 0 = NROM, no bank swapping
   .inesmir 1   ; background mirroring
   ;.include "Level.asm"
@@ -81,9 +81,9 @@ LoadLevelSpritesLoop:
   LDA levelSprites, x        ; load data from address (sprites +  x)
   STA $0232, x          ; store into RAM address ($0232 + x)
   INX                   ; X = X + 1
-  CPX #$20              ; Compare X to hex $20, decimal 32
+  CPX #$40              ; Compare X to hex $20, decimal 32
   BNE LoadLevelSpritesLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
-                        ; if compare was equal to 32, keep going down						
+  STA $0235, x                    ; if compare was equal to 32, keep going down						
 
 
   LDA #%10000000   ; enable NMI, sprites from Pattern Table 1
@@ -112,13 +112,12 @@ LatchController:
   
 ; Load level
 LoadLevel:
-  ;LDA $0232, x
-  ;CLC 
-  ;ADC #$01
-  ;STA $0232, x
-  ;INX
-  ;CPX #$10
-  ;BNE LoadLevel
+  
+  LDA $0232, x
+  STA $0232, x
+  INX
+  CPX #$01
+  BNE LoadLevel
 
   
 
@@ -240,6 +239,7 @@ ReadADone:        ; handling this button is done
 palette:
   .db $0F,$22,$16,$27,$18,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$0F
   .db $0F,$1C,$15,$14,$31,$02,$38,$3C,$0F,$1C,$15,$14,$31,$02,$38,$3C
+
 
 playerSprite:
      ;vert tile attr horiz
