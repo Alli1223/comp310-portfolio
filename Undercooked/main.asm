@@ -90,6 +90,13 @@ LoadBackgroundLoop:
   CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
   BNE LoadBackgroundLoop  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
                         ; if compare was equal to 128, keep going down
+LoadBackgroundLoop2:
+  LDA background2, x     ; load data from address (background + the value in x)
+  STA $2007             ; write to PPU
+  INX                   ; X = X + 1
+  CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
+  BNE LoadBackgroundLoop2  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
+                        ; if compare was equal to 128, keep going down
               
 LoadAttribute:
   LDA $2002             ; read PPU status to reset the high/low latch
@@ -98,6 +105,7 @@ LoadAttribute:
   LDA #$C0
   STA $2006             ; write the low byte of $23C0 address
   LDX #$00              ; start out at 0
+  
 LoadAttributeLoop:
   LDA attribute, x      ; load data from address (attribute + the value in x)
   STA $2007             ; write to PPU
@@ -266,6 +274,19 @@ palette:
   .db $24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$53,$54,$24,$24  ;;some brick tops
 
   .db $24,$24,$24,$24,$47,$47,$24,$24,$47,$47,$47,$47,$47,$47,$24,$24  ;;row 4
+  .db $24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$55,$56,$24,$24  ;;brick bottoms
+  
+  background2:
+  .db $24,$24,$24,$24,$47,$47,$24,$24,$47,$47,$47,$47,$47,$47,$24,$24  ;;row 5
+  .db $24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24  ;;all sky
+  
+  .db $24,$24,$24,$24,$47,$47,$24,$24,$47,$47,$47,$47,$47,$47,$24,$24  ;;row 6
+  .db $24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24  ;;all sky
+  
+  .db $24,$24,$24,$24,$47,$47,$24,$24,$47,$47,$47,$47,$47,$47,$24,$24  ;;row 7
+  .db $24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$53,$54,$24,$24  ;;some brick tops
+  
+  .db $24,$24,$24,$24,$47,$47,$24,$24,$47,$47,$47,$47,$47,$47,$24,$24  ;;row 8
   .db $24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$55,$56,$24,$24  ;;brick bottoms
 
   attribute:
