@@ -75,22 +75,45 @@ LoadPlayerSpriteLoop:
   BNE LoadPlayerSpriteLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
                         ; if compare was equal to 32, keep going down
 
-LoadLevelSprites:
-  LDX #$00              ; start at 0
-LoadLevelSpritesLoop:
-  LDA levelSprites, x        ; load data from address (sprites +  x)
-  STA $0232, x          ; store into RAM address ($0232 + x)
+				
+LoadBackground:
+  LDA $2002             ; read PPU status to reset the high/low latch
+  LDA #$20
+  STA $2006             ; write the high byte of $2000 address
+  LDA #$00
+  STA $2006             ; write the low byte of $2000 address
+  LDX #$00              ; start out at 0
+LoadBackgroundLoop:
+  LDA background, x     ; load data from address (background + the value in x)
+  STA $2007             ; write to PPU
   INX                   ; X = X + 1
-  CPX #$40              ; Compare X to hex $20, decimal 32
-  BNE LoadLevelSpritesLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
-  STA $0235, x                    ; if compare was equal to 32, keep going down						
+  CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
+  BNE LoadBackgroundLoop  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
+                        ; if compare was equal to 128, keep going down
+              
+LoadAttribute:
+  LDA $2002             ; read PPU status to reset the high/low latch
+  LDA #$23
+  STA $2006             ; write the high byte of $23C0 address
+  LDA #$C0
+  STA $2006             ; write the low byte of $23C0 address
+  LDX #$00              ; start out at 0
+LoadAttributeLoop:
+  LDA attribute, x      ; load data from address (attribute + the value in x)
+  STA $2007             ; write to PPU
+  INX                   ; X = X + 1
+  CPX #$08              ; Compare X to hex $08, decimal 8 - copying 8 bytes
+  BNE LoadAttributeLoop
 
-
-  LDA #%10000000   ; enable NMI, sprites from Pattern Table 1
+  LDA #%10010000 ;enable NMI, sprites from Pattern 0, background from Pattern 1
   STA $2000
 
-  LDA #%00010000   ; enable sprites
+   LDA #%00011110 ; enable sprites, enable background
   STA $2001
+
+  LDA #$00
+  STA $2005
+  STA $2005
 
 Forever:
   JMP Forever     ;jump back to Forever, infinite loop
@@ -109,17 +132,7 @@ LatchController:
   STA $4016
   LDA #$00
   STA $4016       ; tell both the controllers to latch buttons
-  
-; Load level
-LoadLevel:
-  
-  LDA $0232, x
-  STA $0232, x
-  INX
-  CPX #$01
-  BNE LoadLevel
-
-  
+ 
 
   
   ;;;;;;;;;;;;;
@@ -224,44 +237,7 @@ ReadADone:        ; handling this button is done
 ; Movement Code End
 
 
-LoadBackground:
-  LDA $2002             ; read PPU status to reset the high/low latch
-  LDA #$20
-  STA $2006             ; write the high byte of $2000 address
-  LDA #$00
-  STA $2006             ; write the low byte of $2000 address
-  LDX #$00              ; start out at 0
-LoadBackgroundLoop:
-  LDA background, x     ; load data from address (background + the value in x)
-  STA $2007             ; write to PPU
-  INX                   ; X = X + 1
-  CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
-  BNE LoadBackgroundLoop  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
-                        ; if compare was equal to 128, keep going down
-              
-LoadAttribute:
-  LDA $2002             ; read PPU status to reset the high/low latch
-  LDA #$23
-  STA $2006             ; write the high byte of $23C0 address
-  LDA #$C0
-  STA $2006             ; write the low byte of $23C0 address
-  LDX #$00              ; start out at 0
-LoadAttributeLoop:
-  LDA attribute, x      ; load data from address (attribute + the value in x)
-  STA $2007             ; write to PPU
-  INX                   ; X = X + 1
-  CPX #$08              ; Compare X to hex $08, decimal 8 - copying 8 bytes
-  BNE LoadAttributeLoop
 
-  LDA #%10010000 ;enable NMI, sprites from Pattern 0, background from Pattern 1
-  STA $2000
-
-   LDA #%00011110 ; enable sprites, enable background
-  STA $2001
-
-  LDA #$00
-  STA $2005
-  STA $2005
 
   
   RTI             ; return from interrupt
@@ -294,15 +270,9 @@ palette:
 
   attribute:
   .db %00000000, %00010000, %01010000, %00010000, %00000000, %00000000, %00000000, %00110000
+  .db $24,$24,$24,$24, $47,$47,$24,$24 ,$47,$47,$47,$47, $47,$47,$24,$24 ,$24,$24,$24,$24 ,$24,$24,$24,$24, $24,$24,$24,$24, $55,$56,$24,$24  ;;brick bottoms
 
 playerSprite:
-     ;vert tile attr horiz
-  .db $80, $32, $00, $80   ;sprite 0
-  .db $80, $33, $00, $88   ;sprite 1
-  .db $88, $34, $00, $80   ;sprite 2
-  .db $88, $35, $00, $88   ;sprite 3
-  
-levelSprites:
      ;vert tile attr horiz
   .db $80, $32, $00, $80   ;sprite 0
   .db $80, $33, $00, $88   ;sprite 1
@@ -322,4 +292,4 @@ levelSprites:
   .bank 2
   .org $0000
   .incbin "mario.chr"   ;includes 8KB graphics file from SMB1
-  .incbin "yychr_col_test.chr"   ;includes 8KB graphics file from SMB1
+  ;.incbin "yychr_col_test.chr"   ;includes 8KB graphics file from SMB1
