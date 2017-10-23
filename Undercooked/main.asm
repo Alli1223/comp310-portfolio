@@ -2,10 +2,22 @@
   .ineschr 1   ; 1x  8KB CHR data
   .inesmap 0   ; mapper 0 = NROM, no bank swapping
   .inesmir 1   ; background mirroring
+  .rsset $0000    ;put variables starting at 0
   ;.include "Level.asm"
 
 ;;;;;;;;;;;;;;;
+  .rsset $0000  ;;start variables at ram location 0
+buttons1   .rs 1  ; player 1 gamepad buttons, one bit per button
+isCarryingTomato .rs 1 ; is player carrying tomato?
 
+CONTROLLER_A      = %10000000
+CONTROLLER_B      = %01000000
+CONTROLLER_SELECT = %00100000
+CONTROLLER_START  = %00010000
+CONTROLLER_UP     = %00001000
+CONTROLLER_DOWN   = %00000100
+CONTROLLER_LEFT   = %00000010
+CONTROLLER_RIGHT  = %00000001
     
   .bank 0
   .org $C000 
@@ -63,8 +75,7 @@ LoadPalettesLoop:
   BNE LoadPalettesLoop  ; Branch to LoadPalettesLoop if compare was Not Equal to zero
                         ; if compare was equal to 32, keep going down
 
-
-
+						
 LoadPlayerSprite:
   LDX #$00              ; start at 0
 LoadPlayerSpriteLoop:
@@ -154,33 +165,66 @@ NMI:
   STA $4014       ; set the high byte (02) of the RAM address, start the transfer
 
 
-LatchController:
-  LDA #$01
-  STA $4016
-  LDA #$00
-  STA $4016       ; tell both the controllers to latch buttons
- 
-
+UpdateTomato:
+  LDA isCarryingTomato
+  BEQ CollisionDone
+  
+; Check collision
+  LDA $0200 ; player Y
+  SEC
+  SBC $0214 ; tomato y
+  CLC
+  ADC #4
+  BMI CollisionDone ; Branch if player - tomato + 4 < 0
+  SEC
+  SBC #8
+  BPL CollisionDone ; branch if player - tomato - 4 > 0
+  
+  LDA $0203 ; player X
+  SEC
+  SBC $0217 ; tomato X
+  CLC
+  ADC #4
+  BMI CollisionDone ; Branch if bulletX - enemyX + 4 < 0
+  SEC
+  SBC #8
+  BPL CollisionDone ; branch if bulletX - enemyX - 4 > 0
+  
+  ; Collision happened
+  LDA #1
+  STA isCarryingTomato ; playerCarryingtomato = 1
+  ;Remove tomato
+  STA $0210
+  STA $0211
+  STA $0212
+  STA $0213
+  LDA #0
+  STA $0217
+  
+CollisionDone:
   
   ;;;;;;;;;;;;;
   ;Movement
   ;;;;;;;;;;;;;
   
   ;Load four first key presses to get to arrow keys
-  LDA $4016  
-  LDA $4016
-  LDA $4016
-  LDA $4016  
+  LDA $4016       ; player 1 - A
+  LDA $4016       ; player 1 - B
+  LDA $4016       ; player 1 - Select
+  LDA $4016       ; player 1 - Start
 
+
+  JSR ReadController1
   
   ;Move Up
 ReadUp: 
-  LDA $4016       
-  AND #%00000001  
-  BEQ ReadUpDone ; Branch if button is not pressed
+  LDA buttons1       ; player 1 - B
+  AND #CONTROLLER_UP  ; only look at bit 0
+  BEQ .Done   ; branch to ReadBDone if button is NOT pressed (0)
+                  ; add instructions here to do something when button IS pressed (1)
   
-  LDY #$00
-LoopUp:
+  LDY #0
+.Loop:
   LDA $0200, y ; Load sprite Y position
   SEC             
   SBC #$01         ; Subtract 1
@@ -191,76 +235,70 @@ LoopUp:
   INY
   INY
   CPY #$10
-  BNE LoopUp
+  BNE .Loop
+.Done:
 
-ReadUpDone: 
 
-;Move Down
 ReadDown: 
-  LDA $4016       
-  AND #%00000001  
-  BEQ ReadDownDone ; Branch if button is not pressed
-  
-  LDY #$00
-LoopDown:
-  LDA $0200, y ; Load sprite Y position
-  CLC             
-  ADC #$01         ; Subtract 1
-  STA $0200, y        ; Save
-  
+  LDA buttons1       ; player 1 - B
+  AND #CONTROLLER_DOWN  ; only look at bit 0
+  BEQ .Done   ; branch to ReadBDone if button is NOT pressed (0)
+                  ; add instructions here to do something when button IS pressed (1)
+  LDY #0
+.Loop:
+  LDA $0200, y    ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  ADC #$01        ; A = A + 1
+  STA $0200, y    ; save sprite X position
   INY
   INY
   INY
   INY
   CPY #$10
-  BNE LoopDown
-ReadDownDone: 
+  BNE .Loop
+.Done:        ; handling this button is done
 
 
   
-  ; Move Right
-ReadB: 
-  LDA $4016       ; player 1 - B
-  AND #%00000001  ; only look at bit 0
-  BEQ ReadBDone   ; branch to ReadBDone if button is NOT pressed (0)
-  
-  LDX #$00
-LoopB:
-  LDA $0203, x       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
-  STA $0203, x       ; save sprite X position
-  
+ReadRight: 
+  LDA buttons1       ; player 1 - B
+  AND #CONTROLLER_RIGHT  ; only look at bit 0
+  BEQ .Done   ; branch to ReadBDone if button is NOT pressed (0)
+                  ; add instructions here to do something when button IS pressed (1)
+  LDX #0
+.Loop:
+  LDA $0203, x    ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  ADC #$01        ; A = A + 1
+  STA $0203, x    ; save sprite X position
   INX
   INX
   INX
   INX
   CPX #$10
-  BNE LoopB
-ReadBDone:        ; handling this button is done
+  BNE .Loop
+.Done:        ; handling this button is done
 
 
   ; Move Left
-ReadA: 
-  LDA $4016       ; player 1 - A
-  AND #%00000001  ; only look at bit 0
-  BEQ ReadADone   ; branch to ReadADone if button is NOT pressed (0)
+ReadLeft: 
+  LDA buttons1       ; player 1 - A
+  AND #CONTROLLER_LEFT  ; only look at bit 0
+  BEQ .Done   ; branch to ReadADone if button is NOT pressed (0)
                   ; add instructions here to do something when button IS pressed (1)
-	
-  LDX #$00
-LoopA:
-  LDA $0203, x       ; load sprite X position
-  CLC             ; make sure the carry flag is clear
-  ADC #$01        ; A = A + 1
-  STA $0203, x       ; save sprite X position
-  
+  LDX #0
+.Loop:
+  LDA $0203, x    ; load sprite X position
+  SEC             ; make sure the carry flag is clear
+  SBC #$01        ; A = A + 1
+  STA $0203, x    ; save sprite X position
   INX
   INX
   INX
   INX
   CPX #$10
-  BNE LoopA
-ReadADone:        ; handling this button is done
+  BNE .Loop       ; Stop looping after 4 sprites (X = 4*4 = 16)
+.Done:        ; handling this button is done
 ; Movement Code End
 
 
@@ -268,7 +306,22 @@ ReadADone:        ; handling this button is done
 
   
   RTI             ; return from interrupt
- 
+  
+  
+ReadController1:
+  LDA #$01
+  STA $4016
+  LDA #$00
+  STA $4016
+  LDX #$08
+ReadController1Loop:
+  LDA $4016
+  LSR A            ; bit0 -> Carry
+  ROL buttons1     ; bit0 <- Carry
+  DEX
+  BNE ReadController1Loop
+  
+  RTS
 ;;;;;;;;;;;;;;  
   
   
@@ -400,6 +453,7 @@ playerSprite:
   .db $80, $33, $00, $88   ;sprite 1
   .db $88, $34, $00, $80   ;sprite 2
   .db $88, $35, $00, $88   ;sprite 3
+  .db $20, $75, $00, $88   ;Tomato
 
   .org $FFFA     ;first of the three vectors starts here
   .dw NMI        ;when an NMI happens (once per frame if enabled) the 
