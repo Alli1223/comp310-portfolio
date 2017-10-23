@@ -191,7 +191,7 @@ UpdateTomato:
   BPL CollisionDone ; branch if bulletX - enemyX - 4 > 0
   
   ; Collision happened
-  LDA #1
+  LDA #0
   STA isCarryingTomato ; playerCarryingtomato = 1
   ;Remove tomato
   STA $0210
@@ -202,6 +202,7 @@ UpdateTomato:
   STA $0217
   
 CollisionDone:
+
   
   ;;;;;;;;;;;;;
   ;Movement
@@ -216,6 +217,28 @@ CollisionDone:
 
   JSR ReadController1
   
+  
+ReadA:
+  LDA buttons1
+  AND #CONTROLLER_A
+  BEQ .Done
+  
+  LDA isCarryingTomato
+  BNE .Done
+  
+  ;Remove tomato
+  STA $0210
+  STA $0211
+  STA $0212
+  STA $0213
+  LDA #0
+  STA $0217
+  
+  LDA #1
+  STA isCarryingTomato
+  
+.Done:
+
   ;Move Up
 ReadUp: 
   LDA buttons1       ; player 1 - B
