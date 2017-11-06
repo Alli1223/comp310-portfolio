@@ -229,21 +229,44 @@ ReadA:
   
   
   ;Set the value of player pos into tomato pos
+  ;X value
+
+.loop:
+  LDA $0200, x
+  CLC
+  ADC #$01
+  STA $0214, x
+  INX
+  INX
+  INX
+  INX
+  CPX #$10
+  BNE .loop
+  
+  ;Run 4 times to copy sprites
+.loop2:
+  LDA $0203, y
+  CLC
+  ADC #$01
+  STA $0217, y
+  INY
+  INY
+  INY
+  INY
+  CPX #$10
+  BNE .loop2
+  
+  
+  ;Y value
   LDA $0203
   STA $0217
-  LDA $0200
-  STA $0214
-  LDA $0201
-  STA $0215
-  LDA $0202
-  STA $0215
-  
-  
   
   LDA #0
   STA isCarryingTomato
   
 .Done:
+
+
 
   ;Move Up
 ReadUp: 
