@@ -191,7 +191,7 @@ UpdateTomato:
   BPL CollisionDone ; branch if player - tomato - 4 > 0
   
   ; Collision happened
-  LDA #0
+  LDA #1
   STA isCarryingTomato ; playerCarryingtomato = 1
   ;Remove tomato
   STA $0210
@@ -223,18 +223,24 @@ ReadA:
   AND #CONTROLLER_A
   BEQ .Done
   
+  ;Only if player is carrying tomato
   LDA isCarryingTomato
-  BNE .Done
+  BEQ .Done
   
-  ;Remove tomato (test)
-  STA $0210
-  STA $0211
-  STA $0212
-  STA $0213
-  LDA #0
+  
+  ;Set the value of player pos into tomato pos
+  LDA $0203
   STA $0217
+  LDA $0200
+  STA $0214
+  LDA $0201
+  STA $0215
+  LDA $0202
+  STA $0215
   
-  LDA #1
+  
+  
+  LDA #0
   STA isCarryingTomato
   
 .Done:
