@@ -166,8 +166,8 @@ NMI:
 
 
 UpdateTomato:
-  LDA isCarryingTomato
-  BEQ CollisionDone
+  ;LDA isCarryingTomato
+  ;BEQ CollisionDone
   
 ; Check collision
   LDA $0200 ; player Y
@@ -184,11 +184,11 @@ UpdateTomato:
   SEC
   SBC $0217 ; tomato X
   CLC
-  ADC #4
-  BMI CollisionDone ; Branch if bulletX - enemyX + 4 < 0
+  SBC #4
+  BMI CollisionDone ; Branch if player - tomato + 4 < 0
   SEC
-  SBC #8
-  BPL CollisionDone ; branch if bulletX - enemyX - 4 > 0
+  ADC #8
+  BPL CollisionDone ; branch if player - tomato - 4 > 0
   
   ; Collision happened
   LDA #0
@@ -226,7 +226,7 @@ ReadA:
   LDA isCarryingTomato
   BNE .Done
   
-  ;Remove tomato
+  ;Remove tomato (test)
   STA $0210
   STA $0211
   STA $0212
