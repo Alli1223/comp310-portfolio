@@ -253,7 +253,7 @@ ReadA:
   INY
   INY
   INY
-  CPX #$10
+  CPY #$10
   BNE .loop2
   
   
