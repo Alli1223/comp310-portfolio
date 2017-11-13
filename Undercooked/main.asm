@@ -103,7 +103,7 @@ LoadBackgroundLoop:
   CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
   BNE LoadBackgroundLoop  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
 						; if compare was equal to 128, keep going down
-      
+  
 LoadBackgroundLoop2:
   LDA background2, x     ; load data from address (background2 + the value in x)
   STA $2007             ; write to PPU
@@ -111,13 +111,14 @@ LoadBackgroundLoop2:
   CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
   BNE LoadBackgroundLoop2  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
                         ; if compare was equal to 128, keep going down
-						
+  					
 LoadBackgroundLoop3:
   LDA background3, x     ; load data from address (background2 + the value in x)
   STA $2007             ; write to PPU
   INX                   ; X = X + 1
   CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
   BNE LoadBackgroundLoop3  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
+  
                         ; if compare was equal to 128, keep going down
 LoadBackgroundLoop4:
   LDA background4, x     ; load data from address (background2 + the value in x)
@@ -200,8 +201,13 @@ UpdateTomato:
   STA $0213
   LDA #0
   STA $0217
-  
 CollisionDone:
+
+;Collision macro for general wall collisions
+Collision .macro
+
+
+  .endm
 
   
   ;;;;;;;;;;;;;
@@ -230,36 +236,17 @@ ReadA:
   
   ;Set the value of player pos into tomato pos
   ;X value
-
-.loop:
-  LDA $0200, x
-  CLC
-  ADC #$01
-  STA $0214, x
-  INX
-  INX
-  INX
-  INX
-  CPX #$10
-  BNE .loop
-  
-  ;Run 4 times to copy sprites
-.loop2:
-  LDA $0203, y
-  CLC
-  ADC #$01
-  STA $0217, y
-  INY
-  INY
-  INY
-  INY
-  CPY #$10
-  BNE .loop2
-  
-  
-  ;Y value
+  LDA #$00
+  LDA $0200
+  STA $0214
   LDA $0203
   STA $0217
+  
+  ;LDX #$04 
+  ;LDA FoodSprites
+  ;STA $0214
+  ;LDA FoodSprites, x
+  ;STA $0217
   
   LDA #0
   STA isCarryingTomato
@@ -493,7 +480,8 @@ palette:
 
   ;Each nametable has an attribute table that sets which colors in the palette will be used in sections of the screen.
   attribute:
-  .db %00010100, %00010000, %01010000, %00010000, %00000000, %00000000, %00000000, %00110000
+  .db %00010100, %00010000, %01010000, %00010000, %00100000, %00000000, %00000000, %00110000
+  .db %00000000, %00010000, %01010000, %00010000, %00000000, %00000000, %00000000, %00100000
   .db %00000000, %00010000, %01010000, %00010000, %00000000, %00000000, %00000000, %00100000
   .db %00000000, %00010000, %01010000, %00010000, %00000000, %00000000, %00000000, %00100000
   .db %00000000, %00010000, %01010000, %00010000, %00000000, %00000000, %00000000, %00100000
@@ -505,6 +493,8 @@ playerSprite:
   .db $80, $33, $00, $88   ;sprite 1
   .db $88, $34, $00, $80   ;sprite 2
   .db $88, $35, $00, $88   ;sprite 3
+  
+FoodSprites:
   .db $20, $75, $00, $88   ;Tomato
 
   .org $FFFA     ;first of the three vectors starts here
