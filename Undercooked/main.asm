@@ -194,6 +194,7 @@ UpdateTomato:
   ; Collision happened
   LDA #1
   STA isCarryingTomato ; playerCarryingtomato = 1
+  
   ;Remove tomato
   STA $0210
   STA $0211
@@ -250,7 +251,6 @@ ReadA:
   
   LDA #0
   STA isCarryingTomato
-  
 .Done:
 
 
@@ -489,10 +489,10 @@ palette:
 
 playerSprite:
      ;vert tile attr horiz
-  .db $80, $32, $00, $80   ;sprite 0
+  .db $80, $32, $03, $80   ;sprite 0
   .db $80, $33, $00, $88   ;sprite 1
   .db $88, $34, $00, $80   ;sprite 2
-  .db $88, $35, $00, $88   ;sprite 3
+  .db $88, $35, $01, $88   ;sprite 3
   
 FoodSprites:
   .db $20, $75, $00, $88   ;Tomato
@@ -510,4 +510,3 @@ FoodSprites:
   .bank 2
   .org $0000
   .incbin "mario.chr"   ;includes 8KB graphics file from SMB1
-  ;.incbin "yychr_col_test.chr"   ;includes 8KB graphics file from SMB1
