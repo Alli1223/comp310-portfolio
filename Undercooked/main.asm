@@ -186,7 +186,7 @@ UpdateTomato:
   
   LDA $0203 ; player X
   SEC
-  SBC FoodSprites, #00 ; tomato X
+  SBC $0217 ; tomato X
   CLC
   SBC #4
   BMI CollisionDone ; Branch if player - tomato + 4 < 0
@@ -197,7 +197,7 @@ UpdateTomato:
 ; Check collision
   LDA $0200 ; player Y
   SEC
-  SBC FoodSprites, x ; tomato y
+  SBC FoodSprites ; tomato y
   CLC
   ADC #4
   BMI CollisionDone ; Branch if player - tomato + 4 < 0
@@ -211,12 +211,10 @@ UpdateTomato:
   LDA #1
   STA isCarryingTomato ; playerCarryingtomato = 1
   
-  ;Remove tomato
-  STA $0210
-  STA $0211
-  STA $0212
+  
+  ; Move tomato to inventory place
+  LDA #$02
   STA $0213
-  LDA #0
   STA $0217
   
   
