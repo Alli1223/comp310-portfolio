@@ -19,6 +19,12 @@ CONTROLLER_UP     = %00001000
 CONTROLLER_DOWN   = %00000100
 CONTROLLER_LEFT   = %00000010
 CONTROLLER_RIGHT  = %00000001
+
+TOMATO_SPAWN_X = $88
+TOMATO_SPAWN_Y = $24
+
+LETTUCE_SPAWN_X = $30
+LETTUCE_SPAWN_Y = $30
     
   .bank 0
   .org $C000 
@@ -68,6 +74,7 @@ LoadPalettes:
   LDA #$00
   STA $2006             ; write the low byte of $3F00 address
   LDX #$00              ; start out at 0
+  
 LoadPalettesLoop:
   LDA palette, x        ; load data from address (palette + the value in x)
                           ; 1st time through loop it will load palette+0
@@ -180,47 +187,81 @@ NMI:
   ;-----------------------------------------------------------------------------------------
   ;Collisions
   
-UpdateTomato:
-  ;LDA isCarryingTomato
-  ;BEQ CollisionDone
-  
-  LDA $0203 ; player X
-  SEC
-  SBC $0217 ; tomato X
-  CLC
-  SBC #4
-  BMI CollisionDone ; Branch if player - tomato + 4 < 0
-  SEC
-  ADC #8
-  BPL CollisionDone ; branch if player - tomato - 4 > 0
-  
-; Check collision
-  LDA $0200 ; player Y
-  SEC
-  SBC FoodSprites ; tomato y
-  CLC
-  ADC #4
-  BMI CollisionDone ; Branch if player - tomato + 4 < 0
-  SEC
-  SBC #8
-  BPL CollisionDone ; branch if player - tomato - 4 > 0
-  
 
-  
   ; Collision happened
   LDA #1
   STA isCarryingTomato ; playerCarryingtomato = 1
   
   
-  ; Move tomato to inventory place
+
+
+
+ItemCollision .macro
+
+  LDA $0203 ; player X
+  SEC
+  SBC \1 ; tomato X
+  CLC
+  SBC #4
+  BMI .Done\@ ; Branch if player - item + 4 < 0
+  SEC
+  ADC #8
+  BPL .Done\@ ; branch if player + item - 4 > 0
+  
+  LDA $0200 ; player Y
+  SEC
+  SBC \2 ; tomato y
+  CLC
+  ADC #4
+  BMI .Done\@ ; Branch if player - tomato + 4 < 0
+  SEC
+  SBC #8
+  BPL .Done\@ ; Branch if player + tomato - 4 > 0
+  
+  
+  ; Collision happened
+  
+  ; Move to inventory list
+  
+  ; IF the collision happened where the lettuce spawns then move the lettuce to inventory
+  LDA LETTUCE_SPAWN_X
+  CMP \1
+  BCC .LettuceCollect\@
+  LDA LETTUCE_SPAWN_Y
+  CMP \2
+  BCC .LettuceCollect\@
+  
+  ; If the collision happened where the lettuce spawns then move the tomato to inventory
+  LDA TOMATO_SPAWN_X
+  CMP \1
+  BCC .TomatoCollect\@
+  LDA TOMATO_SPAWN_Y
+  CMP \2
+  BCS .TomatoCollect\@
+  
+  JMP .Done\@
+  
+  
+  
+  ;STA $0213
+  ;STA $0217
+  
+.TomatoCollect\@
   LDA #$02
   STA $0213
   STA $0217
-  
-  
-CollisionDone:
+  JMP .Done\@
+
+.LettuceCollect\@
+    
+
+.Done\@
+    .endm
 
 
+
+  ItemCollision TOMATO_SPAWN_X, TOMATO_SPAWN_Y
+  ItemCollision LETTUCE_SPAWN_X, LETTUCE_SPAWN_Y
   
   ;---------------------------------------------------------------------------------------------------------------------
   ; Movement / INPUT
@@ -387,29 +428,30 @@ palette:
   ;24 - 27 = Cooker
 
 ;LoadBackground sprites
+;Second row starts mid screen
 background:
-  .db $06,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 1
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 1
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
-  .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 2
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 2
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
-  .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 3
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 3
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
-  .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 4
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 4
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
-  .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 5
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 5
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
 
-  .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 6
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 6
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
-  .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 7
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 7
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
-  .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 8
+  .db $00,$00,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 8
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
 background2:
@@ -489,11 +531,11 @@ background2:
 
   ;Each nametable has an attribute table that sets which colors in the palette will be used in sections of the screen.
   attribute:
-  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 0-3
-  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 4-8
-  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 9-13
-  .db %01010101, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 14-18
-  .db %01010101, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 19-23
+  .db %00110011, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 0-3
+  .db %00110011, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 4-8
+  .db %00110011, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 9-13
+  .db %01010011, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 14-18
+  .db %01010011, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 19-23
   
   .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 
   .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
@@ -508,7 +550,8 @@ playerSprite:
   .db $88, $11, $00, $88   ;sprite 3
   
 FoodSprites:
-  .db $24, $02, $00, $88   ;Tomato
+  .db TOMATO_SPAWN_Y, $02, $00, TOMATO_SPAWN_X   ; TOMATO
+  .db LETTUCE_SPAWN_Y, $03, $01, LETTUCE_SPAWN_X   ; LETTUCE
 
   .org $FFFA     ;first of the three vectors starts here
   .dw NMI        ;when an NMI happens (once per frame if enabled) the 
