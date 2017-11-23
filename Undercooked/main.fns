@@ -1,4 +1,4 @@
-; main.asm
+; .\main.asm
 LoadPalettes                     = $C03D
 background2                      = $E120
 background3                      = $E220
