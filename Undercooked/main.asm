@@ -184,10 +184,20 @@ UpdateTomato:
   ;LDA isCarryingTomato
   ;BEQ CollisionDone
   
+  LDA $0203 ; player X
+  SEC
+  SBC FoodSprites, #00 ; tomato X
+  CLC
+  SBC #4
+  BMI CollisionDone ; Branch if player - tomato + 4 < 0
+  SEC
+  ADC #8
+  BPL CollisionDone ; branch if player - tomato - 4 > 0
+  
 ; Check collision
   LDA $0200 ; player Y
   SEC
-  SBC $0214 ; tomato y
+  SBC FoodSprites, x ; tomato y
   CLC
   ADC #4
   BMI CollisionDone ; Branch if player - tomato + 4 < 0
@@ -195,15 +205,7 @@ UpdateTomato:
   SBC #8
   BPL CollisionDone ; branch if player - tomato - 4 > 0
   
-  LDA $0203 ; player X
-  SEC
-  SBC $0217 ; tomato X
-  CLC
-  SBC #4
-  BMI CollisionDone ; Branch if player - tomato + 4 < 0
-  SEC
-  ADC #8
-  BPL CollisionDone ; branch if player - tomato - 4 > 0
+
   
   ; Collision happened
   LDA #1
@@ -216,13 +218,10 @@ UpdateTomato:
   STA $0213
   LDA #0
   STA $0217
+  
+  
 CollisionDone:
 
-;Collision macro for general wall collisions
-Collision .macro
-
-
-  .endm
 
   
   ;---------------------------------------------------------------------------------------------------------------------
@@ -390,7 +389,7 @@ palette:
   ;24 - 27 = Cooker
 
 ;LoadBackground sprites
-  background:
+background:
   .db $06,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 1
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
@@ -415,7 +414,7 @@ palette:
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 8
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
-  background2:
+background2:
   .db $06,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;row 9
   .db $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04  ;;all sky
   
@@ -492,13 +491,13 @@ palette:
 
   ;Each nametable has an attribute table that sets which colors in the palette will be used in sections of the screen.
   attribute:
-  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
-  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
-  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
-  .db %01010101, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101
-  .db %01010101, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101
+  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 0-3
+  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 4-8
+  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 9-13
+  .db %01010101, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 14-18
+  .db %01010101, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 19-23
   
-  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
+  .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 
   .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
   .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
   
@@ -511,7 +510,7 @@ playerSprite:
   .db $88, $11, $00, $88   ;sprite 3
   
 FoodSprites:
-  .db $20, $02, $00, $88   ;Tomato
+  .db $24, $02, $00, $88   ;Tomato
 
   .org $FFFA     ;first of the three vectors starts here
   .dw NMI        ;when an NMI happens (once per frame if enabled) the 
