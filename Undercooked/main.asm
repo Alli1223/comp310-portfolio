@@ -91,12 +91,14 @@ LoadPalettesLoop:
 LoadPlayerSprite:
   LDX #$00              ; start at 0
 LoadPlayerSpriteLoop:
-  LDA playerSprite, x        ; load data from address (sprites +  x)
+  LDA playerSprite, x   ; load data from address (sprites +  x)
   STA $0200, x          ; store into RAM address ($0200 + x)
   INX                   ; X = X + 1
   CPX #$20              ; Compare X to hex $20, decimal 32
   BNE LoadPlayerSpriteLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
                         ; if compare was equal to 32, keep going down
+						
+
 
 				
 LoadBackground:
@@ -152,7 +154,7 @@ LoadAttributeLoop:
   LDA attribute, x      ; load data from address (attribute + the value in x)
   STA $2007             ; write to PPU
   INX                   ; X = X + 1
-  CPX #$40              ; Compare X to hex $08, decimal 64 - copying 64 bytes
+  CPX #$40              ; Compare X to hex $40, decimal 64 - copying 64 bytes
   BNE LoadAttributeLoop
 
   LDA #%10010000        ;enable NMI, sprites from Pattern 0, background from Pattern 1
@@ -239,6 +241,7 @@ ItemCollision .macro
   CMP \2
   BCS .TomatoCollect\@
   
+  ; Jump to done if they aren't the same
   JMP .Done\@
   
   
@@ -247,7 +250,8 @@ ItemCollision .macro
   ;STA $0217
   
 .TomatoCollect\@
-  LDA #$02
+  LDX FoodSprites
+  INX
   STA $0213
   STA $0217
   JMP .Done\@
