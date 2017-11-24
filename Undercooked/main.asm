@@ -208,7 +208,7 @@ NMI:
   LDA #$02
   STA $4014       ; set the high byte (02) of the RAM address, start the transfer
 
-
+  JSR DrawScore
   
   ; -------------------------------------------------------------------------------------------------------------------
   ; Game states
@@ -377,6 +377,7 @@ ItemCollision .macro
   ; Movement / INPUT
 
   
+  
   ;Load four first key presses to get to arrow keys
   LDA $4016       ; player 1 - A
   LDA $4016       ; player 1 - B
@@ -408,6 +409,7 @@ ReadA:
   LDA $0203
   STA $0217
   
+  jsr IncrementScore
   
   
   ;LDX #$04 
@@ -508,8 +510,29 @@ ReadLeft:
 ; Movement Code End
 
 
+  JMP GameEngineDone
+  
+    RTI             ; return from interrupt
+  
+ReadController1:
+  LDA #$01
+  STA $4016
+  LDA #$00
+  STA $4016
+  LDX #$08
+ReadController1Loop:
+  LDA $4016
+  LSR A            ; bit0 -> Carry
+  ROL buttons1     ; bit0 <- Carry
+  DEX
+  BNE ReadController1Loop
+  
+  RTS
+  
+GameOver:
+
 ; ---------------------------------------------------------------------------------------------------------
-; Draw Score
+; Scoring system
 
 DrawScore:
   LDA $2002
@@ -561,26 +584,9 @@ IncHundreds:
 IncDone:
 
 
-GameOver:
 
   
-  RTI             ; return from interrupt
-  
-  
-ReadController1:
-  LDA #$01
-  STA $4016
-  LDA #$00
-  STA $4016
-  LDX #$08
-ReadController1Loop:
-  LDA $4016
-  LSR A            ; bit0 -> Carry
-  ROL buttons1     ; bit0 <- Carry
-  DEX
-  BNE ReadController1Loop
-  
-  RTS
+
 ;;;;;;;;;;;;;;  
   
   
