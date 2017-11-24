@@ -128,6 +128,9 @@ LoadBackground:
   STA $2006             ; write the low byte of $2000 address
   LDX #$00              ; start out at 0
   
+  
+
+  
 ;Loop through all the background layers
 LoadBackgroundLoop:
   LDA background, x     ; load data from address (background + the value in x)
@@ -409,7 +412,7 @@ ReadA:
   LDA $0203
   STA $0217
   
-  jsr IncrementScore
+  ;jsr IncrementScore
   
   
   ;LDX #$04 
@@ -582,6 +585,7 @@ IncHundreds:
   ADC #$01           ; add one, the carry from previous digit
   STA scoreHundreds
 IncDone:
+
 
 
 
