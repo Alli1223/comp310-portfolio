@@ -7,10 +7,16 @@
 
 ;;;;;;;;;;;;;;;
   .rsset $0000  ;;start variables at ram location 0
+gamestate     .rs 1  ; .Store gamestaes, i.e. titlescreen etc
 buttons1   .rs 1  ; player 1 gamepad buttons, one bit per button
 isCarryingTomato .rs 1 ; is player carrying tomato
 isCarryingLettuce .rs 1 ; is Player Carrying lettuce
+scoreOnes     .rs 1  ; byte for each digit in the decimal timer
+scoreTens     .rs 1
+scoreHundreds .rs 1
 
+
+; Controller Values set to constants
 CONTROLLER_A      = %10000000
 CONTROLLER_B      = %01000000
 CONTROLLER_SELECT = %00100000
@@ -20,11 +26,24 @@ CONTROLLER_DOWN   = %00000100
 CONTROLLER_LEFT   = %00000010
 CONTROLLER_RIGHT  = %00000001
 
+
+; Game states
+STATETITLE     = $00  ; displaying title screen
+STATEPLAYING   = $01  ; move paddles/ball, check for collisions
+STATEGAMEOVER  = $02  ; displaying game over screen
+
+; Tomato spawn location
 TOMATO_SPAWN_X = $88
 TOMATO_SPAWN_Y = $24
 
-LETTUCE_SPAWN_X = $30
-LETTUCE_SPAWN_Y = $30
+;Lettuce spawn location
+LETTUCE_SPAWN_X = $88
+LETTUCE_SPAWN_Y = $40
+
+;Cooker spawn location
+COOKER_LOCATION_X = $88
+COOKER_LOCATION_Y = $50
+
     
   .bank 0
   .org $C000 
@@ -167,6 +186,16 @@ LoadAttributeLoop:
   LDA #$00             ; Tell the PPU that we are not doing any scrolling at the end of NMI
   STA $2005
 
+  
+  ; Set some initial game values
+  LDA #$00
+  STA scoreOnes
+  STA scoreTens
+  STA scoreHundreds
+
+  ; Set starting game state
+  LDA #STATEPLAYING
+  STA gamestate
 
 Forever:
   JMP Forever     ;jump back to Forever, infinite loop
@@ -181,9 +210,58 @@ NMI:
 
 
   
+  ; -------------------------------------------------------------------------------------------------------------------
+  ; Game states
   
   
   
+  ;For when I implement menu screen
+GameEngine:  
+  LDA gamestate
+  CMP #STATETITLE
+  BEQ EngineTitle    ;;game is displaying title screen
+    
+  LDA gamestate
+  CMP #STATEGAMEOVER
+  BEQ EngineGameOver  ;;game is displaying ending screen
+  
+  LDA gamestate
+  CMP #STATEPLAYING
+  BEQ EnginePlaying   ;;game is playing
+  ; Set GameOver
+GameEngineDone:  
+  
+  JSR GameOver  ;;set ball/paddle sprites from positions
+
+  RTI             ; return from interrupt
+ 
+ 
+ 
+ 
+;;;;;;;;
+ 
+EngineTitle:
+  ;;if start button pressed
+  ;;  turn screen off
+  ;;  load game screen
+  ;;  set starting paddle/ball position
+  ;;  go to Playing State
+  ;;  turn screen on
+  JMP GameEngineDone
+
+;;;;;;;;; 
+ 
+EngineGameOver:
+  ;;if start button pressed
+  ;;  turn screen off
+  ;;  load title screen
+  ;;  go to Title State
+  ;;  turn screen on 
+  JMP GameEngineDone
+ 
+;;;;;;;;;;;
+ 
+EnginePlaying:
   
   
   ;-----------------------------------------------------------------------------------------
@@ -194,9 +272,6 @@ NMI:
   LDA #1
   STA isCarryingTomato ; playerCarryingtomato = 1
   
-  
-
-
 
 ItemCollision .macro
 
@@ -223,8 +298,6 @@ ItemCollision .macro
   
   ; Collision happened
   
-  ; Move to inventory list
-  
   ; IF the collision happened where the lettuce spawns then move the lettuce to inventory
   LDA LETTUCE_SPAWN_X
   CMP \1
@@ -233,7 +306,7 @@ ItemCollision .macro
   CMP \2
   BCC .LettuceCollect\@
   
-  ; If the collision happened where the lettuce spawns then move the tomato to inventory
+  ; If the collision happened where the tomato spawns then move the tomato to inventory
   LDA TOMATO_SPAWN_X
   CMP \1
   BCC .TomatoCollect\@
@@ -241,24 +314,56 @@ ItemCollision .macro
   CMP \2
   BCS .TomatoCollect\@
   
+    ; IF the collision happened where the cooker is then take items out of inventory if they are there
+  LDA COOKER_LOCATION_X
+  CMP \1
+  BCC .PlaceItemsOnCooker\@
+  LDA COOKER_LOCATION_Y
+  CMP \2
+  BCC .PlaceItemsOnCooker\@
+
+  
   ; Jump to done if they aren't the same
   JMP .Done\@
   
   
   
-  ;STA $0213
-  ;STA $0217
-  
+  ; Collison happend with tomato
 .TomatoCollect\@
   LDX FoodSprites
   INX
   STA $0213
   STA $0217
+  LDA #1
+  STA isCarryingTomato
   JMP .Done\@
 
+  ; Collision happened with lettuce
 .LettuceCollect\@
-    
 
+  LDA #1
+  STA isCarryingLettuce
+  
+  JMP .Done\@
+
+
+; Collision with cooker
+.PlaceItemsOnCooker\@
+  ; If player is not carrying tomato or lettuice then skip this bit
+  LDA isCarryingTomato
+  BEQ .Done\@
+  
+  ; Move items from inventory to cooker
+  LDA #$00
+  LDA $0200
+  STA $0214
+  LDA $0203
+  STA $0217
+  
+  LDA #0
+  STA isCarryingTomato
+  
+  JMP .Done\@
 .Done\@
     .endm
 
@@ -266,6 +371,7 @@ ItemCollision .macro
 
   ItemCollision TOMATO_SPAWN_X, TOMATO_SPAWN_Y
   ItemCollision LETTUCE_SPAWN_X, LETTUCE_SPAWN_Y
+  ItemCollision COOKER_LOCATION_X, COOKER_LOCATION_Y
   
   ;---------------------------------------------------------------------------------------------------------------------
   ; Movement / INPUT
@@ -284,20 +390,25 @@ ItemCollision .macro
 ReadA:
   LDA buttons1
   AND #CONTROLLER_A
+  
   BEQ .Done
   
   ;Only if player is carrying tomato
   LDA isCarryingTomato
-  BEQ .Done
+  CMP #1
+  BNE .Done
   
   
-  ;Set the value of player pos into tomato pos
+  
+  ;Set the value of player pos into lettuce pos
   ;X value
   LDA #$00
   LDA $0200
   STA $0214
   LDA $0203
   STA $0217
+  
+  
   
   ;LDX #$04 
   ;LDA FoodSprites
@@ -397,7 +508,60 @@ ReadLeft:
 ; Movement Code End
 
 
+; ---------------------------------------------------------------------------------------------------------
+; Draw Score
 
+DrawScore:
+  LDA $2002
+  LDA #$20
+  STA $2006
+  LDA #$20
+  STA $2006          ; start drawing the score at PPU $2020
+  
+  LDA scoreHundreds  ; get first digit
+;  CLC
+;  ADC #$30           ; add ascii offset  (this is UNUSED because the tiles for digits start at 0)
+  STA $2007          ; draw to background
+  LDA scoreTens      ; next digit
+;  CLC
+;  ADC #$30           ; add ascii offset
+  STA $2007
+  LDA scoreOnes      ; last digit
+;  CLC
+;  ADC #$30           ; add ascii offset
+  STA $2007
+  RTS
+
+
+; Increment score  
+IncrementScore:
+IncOnes:
+  LDA scoreOnes      ; load the lowest digit of the number
+  CLC 
+  ADC #$01           ; add one
+  STA scoreOnes
+  CMP #$0A           ; check if it overflowed, now equals 10
+  BNE IncDone        ; if there was no overflow, all done
+IncTens:
+  LDA #$00
+  STA scoreOnes      ; wrap digit to 0
+  LDA scoreTens      ; load the next digit
+  CLC 
+  ADC #$01           ; add one, the carry from previous digit
+  STA scoreTens
+  CMP #$0A           ; check if it overflowed, now equals 10
+  BNE IncDone        ; if there was no overflow, all done
+IncHundreds:
+  LDA #$00
+  STA scoreTens      ; wrap digit to 0
+  LDA scoreHundreds  ; load the next digit
+  CLC 
+  ADC #$01           ; add one, the carry from previous digit
+  STA scoreHundreds
+IncDone:
+
+
+GameOver:
 
   
   RTI             ; return from interrupt
@@ -424,8 +588,8 @@ ReadController1Loop:
   .bank 1
   .org $E000
 palette:
-  .db $0F,$22,$16,$27,$18,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$0F ; Background palette data
-  .db $0F,$30,$26,$05,$0F,$02,$38,$3C,$0F,$1C,$15,$14,$0F,$02,$38,$3C ; Sprite palette data
+  .db $0F,$22,$16,$27, $18,$35,$36,$37, $38,$39,$3A,$3B, $3C,$3D,$3E,$0F ; Background palette data
+  .db $0F,$30,$26,$05, $0F,$02,$38,$3C, $0F,$1C,$15,$14, $0F,$02,$38,$3C ; Sprite palette data
   
   ;04 = Floor
   ;25 = Wall  
@@ -538,8 +702,8 @@ background2:
   .db %00110011, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 0-3
   .db %00110011, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 4-8
   .db %00110011, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 9-13
-  .db %01010011, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 14-18
-  .db %01010011, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101, %01010101 ;row 19-23
+  .db %01010011, %00000000, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101 ;row 14-18
+  .db %01010011, %00000000, %00000000, %00000000, %01010101, %01010101, %01010101, %01010101 ;row 19-23
   
   .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101 
   .db %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
@@ -555,7 +719,7 @@ playerSprite:
   
 FoodSprites:
   .db TOMATO_SPAWN_Y, $02, $00, TOMATO_SPAWN_X   ; TOMATO
-  .db LETTUCE_SPAWN_Y, $03, $01, LETTUCE_SPAWN_X   ; LETTUCE
+  .db LETTUCE_SPAWN_Y, $03, $00, LETTUCE_SPAWN_X   ; LETTUCE
 
   .org $FFFA     ;first of the three vectors starts here
   .dw NMI        ;when an NMI happens (once per frame if enabled) the 
